@@ -315,19 +315,35 @@
             }
 
             try {
-                // 调用 POST /api/test-cases API
-                const response = await fetch(API_BASE_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
-                });
+                let response;
+                let successMessage;
+                
+                if (editingId) {
+                    // 更新模式：调用 PUT /api/test-cases/{id} API
+                    response = await fetch(`${API_BASE_URL}/${editingId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData)
+                    });
+                    successMessage = `测试用例 "${formData.title}" 更新成功！`;
+                } else {
+                    // 创建模式：调用 POST /api/test-cases API
+                    response = await fetch(API_BASE_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(formData)
+                    });
+                    successMessage = `测试用例 "${formData.title}" 创建成功！`;
+                }
 
                 if (!response.ok) {
                     // 处理错误响应
                     const errorData = await response.json();
-                    let errorMessage = '创建失败';
+                    let errorMessage = editingId ? '更新失败' : '创建失败';
                     
                     if (response.status === 422) {
                         // 验证错误
@@ -336,8 +352,10 @@
                         } else {
                             errorMessage = '数据验证失败，请检查输入';
                         }
+                    } else if (response.status === 404) {
+                        errorMessage = '测试用例不存在';
                     } else {
-                        errorMessage = errorData.detail || `创建失败 (${response.status})`;
+                        errorMessage = errorData.detail || `${editingId ? '更新' : '创建'}失败 (${response.status})`;
                     }
                     
                     showMessage(errorMessage, 'error');
@@ -345,25 +363,25 @@
                 }
 
                 // 处理成功响应
-                const newTestCase = await response.json();
-                showMessage(`测试用例 "${newTestCase.title}" 创建成功！`, 'success');
+                const testCase = await response.json();
+                showMessage(successMessage, 'success');
                 
-                // 清空表单
-                document.getElementById('testCaseForm').reset();
+                // 重置表单和编辑状态
+                resetForm();
                 
                 // 刷新列表
                 loadTestCases();
                 
             } catch (error) {
                 // 处理网络错误或其他异常
-                console.error('创建测试用例时发生错误:', error);
+                console.error('提交测试用例时发生错误:', error);
                 showMessage('网络错误，请检查连接后重试', 'error');
             }
         });
 
-        // 取消编辑按钮（将在任务15中实现）
+        // 取消编辑按钮
         document.getElementById('cancelBtn').addEventListener('click', () => {
-            // 功能将在任务15中实现
+            resetForm();
         });
 
         // 加载测试用例列表
@@ -461,16 +479,92 @@
             return div.innerHTML;
         }
         
-        // 编辑测试用例（将在任务15中实现）
-        function editTestCase(id) {
-            // 功能将在任务15中实现
-            console.log('编辑测试用例:', id);
+        // 编辑测试用例
+        async function editTestCase(id) {
+            try {
+                // 调用 GET /api/test-cases/{id} API 获取测试用例详情
+                const response = await fetch(`${API_BASE_URL}/${id}`);
+                
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        showMessage('测试用例不存在', 'error');
+                    } else {
+                        showMessage('获取测试用例详情失败', 'error');
+                    }
+                    return;
+                }
+                
+                const testCase = await response.json();
+                
+                // 填充表单数据
+                document.getElementById('title').value = testCase.title || '';
+                document.getElementById('description').value = testCase.description || '';
+                document.getElementById('steps').value = testCase.steps || '';
+                document.getElementById('expected_result').value = testCase.expected_result || '';
+                
+                // 设置编辑模式
+                editingId = id;
+                document.getElementById('formTitle').textContent = '编辑测试用例';
+                document.getElementById('submitBtn').textContent = '更新测试用例';
+                document.getElementById('cancelBtn').style.display = 'inline-block';
+                
+                // 滚动到表单顶部
+                document.querySelector('.card').scrollIntoView({ behavior: 'smooth' });
+                
+            } catch (error) {
+                console.error('编辑测试用例时发生错误:', error);
+                showMessage('网络错误，请检查连接后重试', 'error');
+            }
         }
         
-        // 删除测试用例（将在任务15中实现）
-        function deleteTestCase(id) {
-            // 功能将在任务15中实现
-            console.log('删除测试用例:', id);
+        // 删除测试用例
+        async function deleteTestCase(id) {
+            // 添加确认提示
+            if (!confirm('确定要删除这个测试用例吗？此操作无法撤销。')) {
+                return;
+            }
+            
+            try {
+                // 调用 DELETE /api/test-cases/{id} API
+                const response = await fetch(`${API_BASE_URL}/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    if (response.status === 404) {
+                        showMessage('测试用例不存在', 'error');
+                    } else {
+                        showMessage(errorData.detail || '删除失败', 'error');
+                    }
+                    return;
+                }
+                
+                // 删除成功
+                showMessage('测试用例删除成功！', 'success');
+                
+                // 如果正在编辑被删除的测试用例，重置表单
+                if (editingId === id) {
+                    resetForm();
+                }
+                
+                // 刷新列表
+                loadTestCases();
+                
+            } catch (error) {
+                console.error('删除测试用例时发生错误:', error);
+                showMessage('网络错误，请检查连接后重试', 'error');
+            }
+        }
+        
+        // 重置表单
+        function resetForm() {
+            document.getElementById('testCaseForm').reset();
+            editingId = null;
+            document.getElementById('formTitle').textContent = '创建测试用例';
+            document.getElementById('submitBtn').textContent = '创建测试用例';
+            document.getElementById('cancelBtn').style.display = 'none';
+            document.getElementById('messageContainer').innerHTML = '';
         }
 
         // 显示消息提示
