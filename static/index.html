@@ -366,21 +366,111 @@
             // 功能将在任务15中实现
         });
 
-        // 加载测试用例列表（将在任务14中实现）
-        function loadTestCases() {
+        // 加载测试用例列表
+        async function loadTestCases() {
             const listContainer = document.getElementById('testCasesList');
             listContainer.innerHTML = '<div class="loading">加载中...</div>';
             
-            // 功能将在任务14中实现
-            setTimeout(() => {
+            try {
+                // 调用 GET /api/test-cases API
+                const response = await fetch(API_BASE_URL);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const testCases = await response.json();
+                
+                // 检查是否有测试用例
+                if (!testCases || testCases.length === 0) {
+                    listContainer.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📝</div>
+                            <p>暂无测试用例，请创建第一个测试用例</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // 渲染测试用例列表
+                listContainer.innerHTML = testCases.map(testCase => renderTestCase(testCase)).join('');
+                
+            } catch (error) {
+                console.error('加载测试用例列表时发生错误:', error);
                 listContainer.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📝</div>
-                        <p>暂无测试用例，请创建第一个测试用例</p>
-                        <p style="margin-top: 10px; font-size: 0.9em;">（列表加载功能将在任务14中实现）</p>
+                    <div class="error-message">
+                        加载失败，请刷新页面重试
                     </div>
                 `;
-            }, 500);
+            }
+        }
+        
+        // 渲染单个测试用例
+        function renderTestCase(testCase) {
+            return `
+                <div class="test-case-item" data-id="${testCase.id}">
+                    <div class="test-case-header">
+                        <div>
+                            <div class="test-case-title">${escapeHtml(testCase.title)}</div>
+                            <div class="test-case-id">ID: ${testCase.id}</div>
+                        </div>
+                        <div class="test-case-actions">
+                            <button class="btn btn-secondary" onclick="editTestCase(${testCase.id})">编辑</button>
+                            <button class="btn btn-danger" onclick="deleteTestCase(${testCase.id})">删除</button>
+                        </div>
+                    </div>
+                    
+                    ${testCase.description ? `
+                        <div class="test-case-field">
+                            <div class="field-label">描述</div>
+                            <div class="field-value">${escapeHtml(testCase.description)}</div>
+                        </div>
+                    ` : ''}
+                    
+                    ${testCase.steps ? `
+                        <div class="test-case-field">
+                            <div class="field-label">测试步骤</div>
+                            <div class="field-value">${escapeHtml(testCase.steps)}</div>
+                        </div>
+                    ` : ''}
+                    
+                    ${testCase.expected_result ? `
+                        <div class="test-case-field">
+                            <div class="field-label">预期结果</div>
+                            <div class="field-value">${escapeHtml(testCase.expected_result)}</div>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="test-case-field">
+                        <div class="field-label">状态</div>
+                        <span class="status-badge">${escapeHtml(testCase.status)}</span>
+                    </div>
+                    
+                    <div class="timestamp">
+                        创建时间: ${formatDateTime(testCase.created_at)} | 
+                        更新时间: ${formatDateTime(testCase.updated_at)}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // HTML 转义函数，防止 XSS 攻击
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // 编辑测试用例（将在任务15中实现）
+        function editTestCase(id) {
+            // 功能将在任务15中实现
+            console.log('编辑测试用例:', id);
+        }
+        
+        // 删除测试用例（将在任务15中实现）
+        function deleteTestCase(id) {
+            // 功能将在任务15中实现
+            console.log('删除测试用例:', id);
         }
 
         // 显示消息提示
