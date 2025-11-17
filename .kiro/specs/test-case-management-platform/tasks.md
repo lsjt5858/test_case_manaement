@@ -112,10 +112,10 @@
   - 更新或删除后刷新列表
   - _需求: 8.4_
 
-- [ ] 16. 验证和测试完整功能
+- [x] 16. 验证和测试完整功能
   - 启动 FastAPI 服务器（uvicorn app.main:app --reload）
   - 访问 Swagger UI 文档（http://localhost:8000/docs）测试所有 API 端点
-  - 访问前端页面（http://localhost:8000）测试完整用户流程
+  - 访问前端页面（http://localhost:8000/static/index.html）测试完整用户流程
   - 验证所有 CRUD 操作正常工作
   - 验证错误处理（404、422 等）
   - 使用浏览器开发者工具检查网络请求和响应

@@ -7,6 +7,7 @@ FastAPI 应用主模块
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.openapi.docs import get_redoc_html
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import engine, Base, get_db
@@ -19,7 +20,8 @@ app = FastAPI(
     description="基于 FastAPI 的测试用例管理系统，提供 CRUD 功能",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url=None,  # 禁用默认 ReDoc，使用自定义版本
+    swagger_ui_parameters={"defaultModelsExpandDepth": 1},
 )
 
 # 配置 CORS 中间件（开发环境）
@@ -48,6 +50,20 @@ def startup_event():
     """
     Base.metadata.create_all(bind=engine)
     print("数据库表已创建")
+
+
+# 自定义 ReDoc 端点（使用 CDN 资源）
+@app.get("/redoc", include_in_schema=False)
+async def redoc():
+    """
+    自定义 ReDoc 文档页面
+    使用 CDN 资源加载 ReDoc
+    """
+    return get_redoc_html(
+        title="测试用例管理平台 - API 文档",
+        openapi_url=app.openapi_url,
+        redoc_js_url="https://cdn.jsdelivr.net/npm/redoc@latest/bundles/redoc.standalone.js",
+    )
 
 
 # 根路径：健康检查端点
