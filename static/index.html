@@ -295,11 +295,70 @@
             loadTestCases();
         });
 
-        // 表单提交事件（将在任务13中实现）
-        document.getElementById('testCaseForm').addEventListener('submit', (e) => {
+        // 表单提交事件
+        document.getElementById('testCaseForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            // 功能将在任务13中实现
-            showMessage('此功能将在下一个任务中实现', 'error');
+            
+            // 获取表单数据
+            const formData = {
+                title: document.getElementById('title').value.trim(),
+                description: document.getElementById('description').value.trim() || null,
+                steps: document.getElementById('steps').value.trim() || null,
+                expected_result: document.getElementById('expected_result').value.trim() || null,
+                status: 'active'
+            };
+
+            // 验证必填字段
+            if (!formData.title) {
+                showMessage('标题不能为空', 'error');
+                return;
+            }
+
+            try {
+                // 调用 POST /api/test-cases API
+                const response = await fetch(API_BASE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    // 处理错误响应
+                    const errorData = await response.json();
+                    let errorMessage = '创建失败';
+                    
+                    if (response.status === 422) {
+                        // 验证错误
+                        if (errorData.detail && Array.isArray(errorData.detail)) {
+                            errorMessage = errorData.detail.map(err => err.msg).join(', ');
+                        } else {
+                            errorMessage = '数据验证失败，请检查输入';
+                        }
+                    } else {
+                        errorMessage = errorData.detail || `创建失败 (${response.status})`;
+                    }
+                    
+                    showMessage(errorMessage, 'error');
+                    return;
+                }
+
+                // 处理成功响应
+                const newTestCase = await response.json();
+                showMessage(`测试用例 "${newTestCase.title}" 创建成功！`, 'success');
+                
+                // 清空表单
+                document.getElementById('testCaseForm').reset();
+                
+                // 刷新列表
+                loadTestCases();
+                
+            } catch (error) {
+                // 处理网络错误或其他异常
+                console.error('创建测试用例时发生错误:', error);
+                showMessage('网络错误，请检查连接后重试', 'error');
+            }
         });
 
         // 取消编辑按钮（将在任务15中实现）
