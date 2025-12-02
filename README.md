@@ -51,7 +51,12 @@
 | **数据验证** | Pydantic | 2.0+ | 数据验证和序列化库，自动类型检查 |
 | **服务器** | Uvicorn | 0.24+ | ASGI 服务器，支持异步处理 |
 
-### 前端技术栈
+### 前端技术栈（React 版本）
+- **React 18** - 现代化前端框架
+- **Vite** - 快速构建工具
+- **Axios** - HTTP 请求库
+
+### 前端技术栈（原生版本）
 - **HTML5** - 页面结构
 - **CSS3** - 样式美化
 - **JavaScript (原生)** - 交互逻辑，无需框架依赖
@@ -156,12 +161,12 @@ pip install -r requirements.txt
 ### 第四步：启动服务
 
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8010
 ```
 
 你会看到类似的输出：
 ```
-INFO:     Uvicorn running on http://0.0.0.0:8000
+INFO:     Uvicorn running on http://0.0.0.0:8010
 INFO:     Application startup complete
 ```
 
@@ -171,10 +176,58 @@ INFO:     Application startup complete
 
 | 功能 | 地址 |
 |------|------|
-| 🌐 **前端页面** | http://localhost:8000/static/index.html |
-| 📚 **API 文档 (Swagger)** | http://localhost:8000/docs |
-| 📖 **API 文档 (ReDoc)** | http://localhost:8000/redoc |
-| ✅ **健康检查** | http://localhost:8000/ |
+| 🌐 **前端页面（原生）** | http://localhost:8010/static/index.html |
+| 📚 **API 文档 (Swagger)** | http://localhost:8010/docs |
+| 📖 **API 文档 (ReDoc)** | http://localhost:8010/redoc |
+| ✅ **健康检查** | http://localhost:8010/ |
+
+---
+
+## 🎯 前后端分离开发（React）
+
+### 启动 React 前端
+
+```bash
+# 进入前端目录
+cd frontend
+
+# 安装依赖
+npm install
+
+# 启动开发服务器
+npm run dev
+```
+
+前端运行在 http://localhost:3000，通过 Vite 代理自动转发 API 请求到后端。
+
+### 前后端分离架构说明
+
+```
+┌─────────────────────────────────────────────────────────┐
+│              React 前端 (localhost:3000)                 │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │  App.jsx          - 主应用组件，状态管理          │  │
+│  │  TestCaseList.jsx - 列表展示组件                 │  │
+│  │  TestCaseForm.jsx - 表单组件（创建/编辑）        │  │
+│  │  api.js           - API 服务层                   │  │
+│  └──────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+                          ↕ HTTP/REST (Vite 代理)
+┌─────────────────────────────────────────────────────────┐
+│              FastAPI 后端 (localhost:8010)               │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │  /api/test-cases - RESTful API 端点              │  │
+│  └──────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+```
+
+### React 核心概念（教程）
+
+1. **组件化** - UI 拆分为可复用的组件
+2. **useState** - 状态管理 Hook
+3. **useEffect** - 副作用 Hook（数据获取）
+4. **Props** - 父子组件通信
+5. **受控组件** - 表单数据由 React 管理
 
 ---
 
@@ -216,7 +269,7 @@ REST (Representational State Transfer) 是一种 Web 服务设计风格。简单
 ### 示例 1：使用 curl 创建测试用例（初学者）
 
 ```bash
-curl -X POST "http://localhost:8000/api/test-cases" \
+curl -X POST "http://localhost:8010/api/test-cases" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "登录功能测试",
@@ -246,7 +299,7 @@ curl -X POST "http://localhost:8000/api/test-cases" \
 import requests
 
 # 获取所有测试用例
-response = requests.get("http://localhost:8000/api/test-cases")
+response = requests.get("http://localhost:8010/api/test-cases")
 
 if response.status_code == 200:
     test_cases = response.json()
@@ -266,7 +319,7 @@ const updateData = {
   status: "completed"
 };
 
-fetch(`http://localhost:8000/api/test-cases/${testCaseId}`, {
+fetch(`http://localhost:8010/api/test-cases/${testCaseId}`, {
   method: 'PUT',
   headers: {
     'Content-Type': 'application/json'
@@ -539,13 +592,13 @@ pip install mypy               # 类型检查
 
 ```bash
 # 使用 --reload 参数，代码修改后自动重启
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8010
 ```
 
 #### 3. 查看 API 文档
 
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+- Swagger UI: http://localhost:8010/docs
+- ReDoc: http://localhost:8010/redoc
 
 ### 代码详解
 
